@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:orientation="horizontal"
+    android:layout_height="wrap_content">
+
+    <TextView
+        android:id="@+id/messageText"
+        android:background="@drawable/message_shape"
+        android:layout_width="wrap_content"
+        android:maxWidth="290dp"
+        android:gravity="center_vertical"
+        android:layout_margin="10dp"
+        android:layout_height="wrap_content" />
+
+</RelativeLayout>

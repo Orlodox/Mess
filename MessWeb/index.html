@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="utf-8">
+    <title></title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.8.2/css/all.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+</head>
+<body>
+
+<div>
+    <div class="container">
+    </div>
+    <div class="notcomp">
+
+    </div>
+    <div class="my">
+    </div>
+    <input type="text" class="txtb" placeholder="Message ...">
+    <button class="back">
+        К списку чатов
+    </button>
+</div>
+
+<div>
+
+</div>
+
+<script type="text/javascript">
+    var actualInfo = {}
+
+    var currChatWith = ""
+    var key = ""
+    var isUnlock = false
+
+    var onBack = function () {
+        $(".container").show()
+        $(".txtb").hide()
+        $(".back").hide()
+        $(".my").hide()
+        currChatWith = ""
+    }
+    onBack()
+    $(".back").click(() => onBack())
+
+    var lock = function () {
+        $(".container").hide()
+        $(".txtb").hide()
+        $(".back").hide()
+        $(".my").hide()
+        $(".notcomp").show()
+
+        $('.notcomp').each(function () {
+            key = Math.floor((Math.random() * 999999999) + 123456789);
+            $(this).text(key)
+        });
+    }
+    lock();
+
+    var sync = function () {
+        $.ajax({
+            type: "POST",
+            contentType: 'application/json; charset=utf-8',
+            dataType: 'json',
+            url: "http://localhost:1337/mess",
+            data: JSON.stringify(actualInfo),
+            async: true,
+            crossDomain: true
+        })
+    }
+
+    setInterval(function () {
+            $.ajax({
+                type: "POST",
+                contentType: 'application/json; charset=utf-8',
+                dataType: 'json',
+                headers: {'key': key},
+                url: "http://localhost:1337/mess",
+                async: true,
+                error: function () {
+                    if (isUnlock) {
+                        lock()
+                        isUnlock = false
+                    }
+                    console.log(isUnlock)
+                },
+                success: function (response) {
+                    isUnlock = true
+                    console.log(isUnlock)
+                    if (currChatWith === "")
+                        $(".container").show()
+                    $(".notcomp").hide()
+                    actualInfo = response
+                    if (currChatWith !== "")
+                        updateChat()
+                    var len = response.user.chats.length;
+                    $(".container").empty();
+                    for (var i = 0; i < len; i++) {
+                        var id = response.user.chats[i]['with'];
+                        var name = response.user.friends.find(it => it.userID === id).name;
+                        var chat = $("<div class='message'></div>")
+                            .attr('id', id)
+                            .text(name)
+                            .click(function (e) {
+                                $(".container").hide()
+                                $(".txtb").show()
+                                $(".back").show()
+                                $(".my").show()
+
+                                var chat = actualInfo.user.chats.find(it => it.with.toString() === e.target.id);
+                                currChatWith = e.target.id
+                                var leng = chat.messages.length;
+                                $(".my").empty();
+                                for (var j = 0; j < leng; j++) {
+                                    var mess = $("<div class='task'></div>").text(chat.messages[j].content.valueOf());
+                                    if (chat.messages[j].from === actualInfo.user.userID)
+                                        mess.addClass("me");
+                                    $(".my").append(mess);
+                                }
+                            })
+                        $(".container").append(chat);
+                    }
+                }
+            });
+        },
+        1000
+    )
+    ;
+
+    var updateChat = function () {
+        var chat = actualInfo.user.chats.find(it => it.with.toString() === currChatWith);
+        var leng = chat.messages.length;
+        $(".my").empty();
+        for (var j = 0; j < leng; j++) {
+            var mess = $("<div class='task'></div>").text(chat.messages[j].content.valueOf());
+            if (chat.messages[j].from === actualInfo.user.userID)
+                mess.addClass("me");
+            $(".my").append(mess);
+        }
+    }
+
+
+    $(".txtb").on("keyup", function (e) {
+        //13  means enter button
+        if (e.keyCode == 13 && $(".txtb").val() != "") {
+            var content = $(".txtb").val()
+            actualInfo.user.chats.find(it => it.with.toString() === currChatWith).messages.push({
+                "content": content,
+                "from": 0,
+                "time": "Jan 16, 2021 7:02:08 PM",
+                "to": currChatWith
+            })
+            sync()
+            var task = $("<div class='task me'></div>").text(content);
+            // var del = $("<i class='fas fa-trash-alt'></i>").click(function () {
+            //     var p = $(this).parent();
+            //     p.fadeOut(function () {
+            //         p.remove();
+            //     });
+            // });
+            // var check = $("<i class='fas fa-check'></i>").click(function () {
+            //     var p = $(this).parent();
+            //     p.fadeOut(function () {
+            //         $(".my").append(p);
+            //         p.fadeIn();
+            //     });
+            //     $(this).remove();
+            // });
+            // task.append(del, check);
+            $(".my").append(task);
+            //to clear the input
+            $(".txtb").val("");
+        }
+    });
+</script>
+
+</body>
+</html>
